@@ -89,7 +89,7 @@ class ApiServices{
         }
     }
 
-    async deleteUserChat({chatId}){
+    async deleteUserChat(chatId){
         try {
             const {data} = await this.apiClient.delete(`/chat-app/chats/remove/${chatId}`)
             

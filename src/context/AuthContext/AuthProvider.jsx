@@ -1,16 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import apiServices from '../api/api'
+import React, {useState, useEffect} from 'react'
+import apiServices from '../../api/api'
 import { useNavigate } from 'react-router-dom'
-
-const AuthContext = createContext({
-    status: false,
-    user: null,
-    register: async ()=>{},
-    login: async ()=>{},
-    logout: async ()=>{},
-})
-
-const useAuth = () => useContext(AuthContext)
+import { AuthContext } from './AuthContext'
 
 const AuthProvider = ({children}) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -71,4 +62,5 @@ const AuthProvider = ({children}) => {
     )
 }
 
-export {AuthContext, AuthProvider, useAuth}
+
+export default AuthProvider
