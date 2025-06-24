@@ -112,7 +112,7 @@ class ApiServices{
         }
     }
 
-    async getGroupInfo({chatId}){
+    async getGroupInfo(chatId){
         try {
             const {data} = await this.apiClient.get(`/chat-app/chats/group/${chatId}`)
             
@@ -122,25 +122,17 @@ class ApiServices{
         }
     }
 
-    async deleteGroup({chatId}){
+    async deleteGroup(chatId){
         try {
-            const {data} = await axios.request({
-                method: 'DELETE',
-                url: `${config.apiurl}/chat-app/chats/group/${chatId}`,
-                headers: {accept: 'application/json'}
-            })
+            const {data} = await this.apiClient.delete(`/chat-app/chats/group/${chatId}`)
 
-            if(data){
-                return data
-            }else{
-                return null
-            }
+            return data || null;
         } catch (error) {
             throw new Error(error)
         }
     }
 
-    async updateGroupName({chatId, name}){
+    async updateGroupName(chatId, name){
         try {
             const {data} = await this.apiClient.patch(`/chat-app/chats/group/${chatId}`,{name})
             
@@ -150,7 +142,7 @@ class ApiServices{
         }
     }
 
-    async addParticipantToGroup({chatId, participantId}){
+    async addParticipantToGroup(chatId, participantId){
         try {
             const {data} = await this.apiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`)
             
@@ -160,7 +152,7 @@ class ApiServices{
         }
     }
 
-    async removeParticipantFromGroup({chatId, participantId}){
+    async removeParticipantFromGroup(chatId, participantId){
         try {
             const {data} = await this.apiClient.delete(`/chat-app/chats/group/${chatId}/${participantId}`)
 

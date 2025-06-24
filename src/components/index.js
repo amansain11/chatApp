@@ -7,6 +7,7 @@ import Select from './Select'
 import Typing from './Typing'
 import ChatItem from './ChatItem'
 import GroupChatDetailsModal from './GroupChatDetailsModal'
+import MessageItem from './MessageItem'
 
 export {
     Input,
@@ -18,4 +19,5 @@ export {
     Typing,
     ChatItem,
     GroupChatDetailsModal,
+    MessageItem,
 }

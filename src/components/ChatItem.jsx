@@ -32,14 +32,15 @@ function ChatItem({
 
   return (
     <>
-        <GroupChatDetailsModal 
-           open={openGroupInfo}
-           onClose={() => {
-             setOpenGroupInfo(false)
-           }}
-           chatId={chat._id}
-           onGroupDelete={onChatDelete}
-        />
+        {openGroupInfo && <GroupChatDetailsModal 
+          open={openGroupInfo}
+          onClose={() => {
+            setOpenGroupInfo(false)
+          }}
+          chatId={chat._id}
+          onGroupDelete={onChatDelete}
+        />}
+        
         <div
             role="button"
             onClick={() => onClick(chat)}

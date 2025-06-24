@@ -1,20 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
-import {Button, Input, AddChatModal, Typing, ChatItem} from '../components'
+import {Button, Input, AddChatModal, Typing, ChatItem, MessageItem} from '../components'
 import { useAuth } from '../context/AuthContext'
 import apiServices from '../api/api'
 import { getChatObjectMetadata } from '../utils'
+import { PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
 
 function Chat() {
-  const [openAddChat, setOpenAddChat] = useState(false)
-  const [localSearchQuery, setLocalSearchQuery] = useState("")
-  const [loadingChats, setLoadingChats] = useState(false)
-  const [unreadMessages, setUnreadMessages] = useState([])
-  const [chats, setChats] = useState([])
-  const [message, setMessage] = useState("")
+  const { user, logout } = useAuth()
 
   const currentChat = useRef(null)
 
-  const { user, logout } = useAuth()
+  const [openAddChat, setOpenAddChat] = useState(false)
+  const [localSearchQuery, setLocalSearchQuery] = useState("")
+  const [loadingChats, setLoadingChats] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState([])
+  const [chats, setChats] = useState([])
+  const [messages, setMessages] = useState([]) // to store chat all messages
+  const [message, setMessage] = useState("") // to store currently typed message
+  const [attachedFiles, setAttachedFiles] = useState([])
+  const [isTyping, setIsTyping] = useState(false)
 
   const getChats = async () => {
     setLoadingChats(true)
@@ -25,6 +30,14 @@ function Chat() {
 
   const getMessages = async () => {}
 
+  const deleteChatMessage = async (message) => {}
+
+  const handleOnMessageChange = (e) => {
+    setMessage(e.target.value)
+  }
+
+  const sendChatMessage = async () => {}
+
   useEffect(() => {
     getChats()
 
@@ -32,6 +45,8 @@ function Chat() {
 
     if(_currentChat){
       currentChat.current = _currentChat;
+
+      getMessages()
     }
   },[])
 
@@ -115,6 +130,150 @@ function Chat() {
           )}
         </div>
         <div className="w-2/3 border-l-[0.1px] border-zinc-700">
+          {currentChat.current && currentChat.current?._id ? (
+            <>
+              <div className='p-4 sticky top-0 bg-[#212328] z-20 flex justify-between items-center w-full border-b-[0.1px] border-[#2e333d]'>
+                <div className='flex justify-start items-center w-max gap-3'>
+                  {currentChat.current.isGroupChat ? (
+                    <div className='w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap'>
+                      {currentChat.current.participants
+                        .slice(0, 3)
+                        .map((participant, i) => {
+                          return (
+                            <img 
+                              key={participant._id}
+                              src={participant.avatar.url}
+                              className={`w-9 h-9 border-[1px] border-white rounded-full absolute outline-4 outline-[#212328]
+                                ${i === 0 
+                                    ? "left-0 z-30"
+                                    : i === 1
+                                    ? "left-2 z-20"
+                                    : i === 2
+                                    ? "left-4 z-10"
+                                    : ""
+                                }
+                              `}
+                            />
+                          )
+                        })
+                      }
+                    </div>
+                  ) : (
+                    <img
+                      className='h-14 w-14 rounded-full flex flex-shrink-0 object-cover'
+                      src={ getChatObjectMetadata(currentChat.current, user).avatar }
+                    />
+                  )}
+                  <div>
+                    <p className='font-bold'>
+                      { getChatObjectMetadata(currentChat.current, user).title }
+                    </p>
+                    <small className='text-zinc-400'>
+                      { getChatObjectMetadata(currentChat.current, user).description }
+                    </small>
+                  </div>
+                </div>
+              </div>
+              <div
+               className={`p-8 overflow-y-auto flex flex-col-reverse gap-6 w-full
+                 ${attachedFiles.length > 0 
+                    ? "h-[calc(100vh-336px)]"
+                    : "h-[calc(100vh-176px)]"
+                 }
+               `}
+               id="message-window"
+              >
+                {loadingMessages ? (
+                  <div className='flex justify-center items-center h-[calc(100% - 88px)]'>
+                    <Typing />
+                  </div>
+                ) : (
+                  <>
+                    {isTyping ? <Typing /> : null}
+                    {messages?.map((msg) => {
+                      return (
+                        <MessageItem 
+                          key={msg._id}
+                          isOwnMessage={msg.sender?._id === user?._id}
+                          isGroupChatMessage={currentChat.current?.isGroupChat}
+                          message={msg}
+                          deleteChatMessage={deleteChatMessage}
+                        />
+                      )
+                    })}
+                  </>
+                )}
+              </div>
+              {attachedFiles.length > 0 ? (
+                <div className='grid gap-4 grid-cols-5 p-4 justify-start max-w-fit'>
+                  {attachedFiles.map((file, i) => {
+                    return (
+                      <div 
+                        key={i}
+                        className='group w-32 h-32 relative aspect-square rounded-xl cursor-pointer'
+                      >
+                        <div className='absolute inset-0 flex justify-center items-center w-full h-full bg-black/40 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
+                          <Button
+                            className='absolute -top-2 -right-2'
+                            onClick={() => {
+                              setAttachedFiles(
+                                attachedFiles.filter((_, ind) => ind !== i)
+                              )
+                            }}
+                          >
+                            <XMarkIcon className='h-6 w-6 text-white'/>
+                          </Button>
+                        </div>
+                        <img 
+                          className='h-full rounded-xl w-full object-cover'
+                          src={URL.createObjectURL(File)} 
+                          alt="attachment" 
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : null}
+              <div className='sticky top-full p-4 flex justify-between items-center w-full gap-2 border-t-[0.1px] border-[#2e333d]'>
+                <input 
+                  hidden
+                  id='attachments'
+                  type="file" 
+                  value=""
+                  onChange={(e) => {
+                    if(e.target.files) setAttachedFiles([...e.target.files])
+                  }}
+                  multiple
+                  max={5}
+                />
+                <label
+                  htmlFor='attachments'
+                  className='p-4 rounded-full bg-[#212328] hover:bg-[#2e333d]'
+                >
+                  <PaperClipIcon className='w-6 h-6' />
+                </label>
+                <Input 
+                  placeholder="Message"
+                  value={message}
+                  onChange={handleOnMessageChange}
+                  onKeyDown={(e) => {
+                    if(e.key === "Enter") sendChatMessage()
+                  }}
+                />
+                <Button
+                  className='p-4 rounded-full bg-[#212328] hover:bg-[#2e333d] disabled:opacity-50'
+                  onClick={sendChatMessage}
+                  disabled={!message && attachedFiles.length <= 0}
+                >
+                  <PaperAirplaneIcon className='w-6 h-6'/>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full flex justify-center items-center">
+              No chat selected
+            </div>
+          )}
         </div>
       </div>
     </>
