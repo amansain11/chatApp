@@ -1,12 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {Button, Input, AddChatModal, Typing, ChatItem, MessageItem} from '../components'
 import { useAuth } from '../context/AuthContext'
+import { useSocket } from '../context/SocketContext'
 import apiServices from '../api/api'
 import { getChatObjectMetadata } from '../utils'
-import { PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { ArrowLeftStartOnRectangleIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
+
+const CONNECTED_EVENT = "connected";
+const DISCONNECT_EVENT = "disconnect";
+const NEW_CHAT_EVENT = "newChat";
+const JOIN_CHAT_EVENT = "joinChat";
+const LEAVE_CHAT_EVENT = "leaveChat";
+const TYPING_EVENT = "typing";
+const STOP_TYPING_EVENT = "stopTyping";
+const MESSAGE_RECEIVED_EVENT = "messageReceived";
+const MESSAGE_DELETE_EVENT = "messageDeleted";
+const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
+// const SOCKET_ERROR_EVENT = "socketError";
 
 function Chat() {
   const { user, logout } = useAuth()
+  const { socket } = useSocket()
 
   const currentChat = useRef(null)
 
@@ -28,7 +42,9 @@ function Chat() {
     setLoadingChats(false)
   }
 
-  const getMessages = async () => {}
+  const getMessages = async () => {
+
+  }
 
   const deleteChatMessage = async (message) => {}
 
@@ -45,6 +61,8 @@ function Chat() {
 
     if(_currentChat){
       currentChat.current = _currentChat;
+
+      socket?.emit(JOIN_CHAT_EVENT, _currentChat.current?._id)
 
       getMessages()
     }
