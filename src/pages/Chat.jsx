@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import apiServices from '../api/api'
 import { getChatObjectMetadata } from '../utils'
-import { ArrowLeftStartOnRectangleIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { ArrowLeftStartOnRectangleIcon, FlagIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
 
 const CONNECTED_EVENT = "connected";
 const DISCONNECT_EVENT = "disconnect";
@@ -24,6 +24,11 @@ function Chat() {
 
   const currentChat = useRef(null)
 
+    // To keep track of the setTimeout function
+  const typingTimeoutRef = useRef(null)
+
+  const [isConnected, setIsConnected] = useState(false)
+
   const [openAddChat, setOpenAddChat] = useState(false)
   const [localSearchQuery, setLocalSearchQuery] = useState("")
   const [loadingChats, setLoadingChats] = useState(false)
@@ -33,7 +38,39 @@ function Chat() {
   const [messages, setMessages] = useState([]) // to store chat all messages
   const [message, setMessage] = useState("") // to store currently typed message
   const [attachedFiles, setAttachedFiles] = useState([])
+
   const [isTyping, setIsTyping] = useState(false)
+  const [selfTyping, setSelfTyping] = useState(false)
+
+  const updateChatLastMessage = (chatToUpdateId, message) => {
+    const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)
+
+    chatToUpdate.lastMessage = message
+
+    chatToUpdate.updatedAt = message?.updatedAt
+
+    setChats([
+      chatToUpdate,
+      ...chats.filter((chat) => chat._id !== chatToUpdateId)
+    ])
+  }
+
+  const updateChatLastMessageOnDeletion = async (chatToUpdateId, message) => {
+    const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)
+
+    if(chatToUpdate.lastMessage?._id === message._id){
+      const {data} = await apiServices.getChatMessages(chatToUpdateId)
+
+      if(data){
+        chatToUpdate.lastMessage = data[0]
+
+        setChats([
+          chatToUpdate,
+          ...chats.filter((chat) => chat._id !== chatToUpdateId)
+        ])
+      }
+    }
+  }
 
   const getChats = async () => {
     setLoadingChats(true)
@@ -43,16 +80,75 @@ function Chat() {
   }
 
   const getMessages = async () => {
+    if(!currentChat.current?._id) return alert("No chat is selected")
+    
+    if(!socket) return alert("Socket not available")
 
+    socket.emit(JOIN_CHAT_EVENT, currentChat.current?._id)
+
+    setUnreadMessages(
+      unreadMessages.filter((msg) => msg.chat !== currentChat.current?._id)
+    )
+
+    setLoadingMessages(true)
+
+    const {data} = await apiServices.getChatMessages(currentChat.current?._id || "")
+
+    setMessages(data || [])
+
+    setLoadingMessages(false)
   }
-
-  const deleteChatMessage = async (message) => {}
 
   const handleOnMessageChange = (e) => {
     setMessage(e.target.value)
+
+    if(!socket || !isConnected) return
+
+    if(!selfTyping){
+      setSelfTyping(true)
+
+      socket.emit(TYPING_EVENT, currentChat.current?._id)
+    }
+
+    if(typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+
+    const timerLength = 3000;
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit(STOP_TYPING_EVENT, currentChat.current?._id)
+
+      setSelfTyping(false)
+    }, timerLength);
   }
 
-  const sendChatMessage = async () => {}
+  const sendChatMessage = async () => {
+    if(!currentChat.current?._id || !socket) return
+
+    socket.emit(STOP_TYPING_EVENT, currentChat.current?._id)
+    console.log('message from sendchatmessage: ', message)
+    const {data} = await apiServices.sendMessage(
+      currentChat.current?._id || "",
+      message,
+      attachedFiles
+    )
+
+    if(data){
+      setMessage("")
+      setAttachedFiles([])
+      setMessages((prev) => [data, ...prev])
+      updateChatLastMessage(currentChat.current?._id || "", data)
+    }
+  }
+
+  const deleteChatMessage = async (message) => {
+    const {data} = await apiServices.deleteMessage(message.chat, message._id)
+    
+    if(data){
+      setMessages((prev) => prev.filter((msg) => msg._id !== data._id))
+
+      updateChatLastMessageOnDeletion(message.chat, message)
+    }
+  }
 
   useEffect(() => {
     getChats()

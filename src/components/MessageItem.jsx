@@ -35,8 +35,8 @@ function MessageItem({
         </div>
       ) : null}
       <div
-        className={`flex justify-start items-end gap-3 max-w-lg min-w-sm
-            ${isOwnMessage ? 'ml-auto' : ""}
+        className={`flex items-end gap-3 max-w-lg min-w-sm
+            ${isOwnMessage ? 'justify-end ml-auto' : "justify-start"}
         `}
       >
         <img 

@@ -172,7 +172,7 @@ class ApiServices{
         }
     }
 
-    async getChatMessages({chatId}){
+    async getChatMessages(chatId){
         try {
             const {data} = await this.apiClient.get(`/chat-app/messages/${chatId}`)
 
@@ -182,7 +182,7 @@ class ApiServices{
         }
     }
 
-    async sendMessage({chatId, content, attachments}){
+    async sendMessage(chatId, content, attachments){
         const formData = new FormData()
 
         if(content){
@@ -194,7 +194,7 @@ class ApiServices{
         })
 
         try {
-            const {data} = await this.apiClient.post(`/chat-app/messages/${chatId}`,{formData},{
+            const {data} = await this.apiClient.post(`/chat-app/messages/${chatId}`,formData,{
                 headers: {
                     'content-type': 'multipart/form-data'
                 }
@@ -206,7 +206,7 @@ class ApiServices{
         }
     }
 
-    async deleteMessage({chatId, messageId}){
+    async deleteMessage(chatId, messageId){
         try {
             const {data} = await this.apiClient.delete(`/chat-app/messages/${chatId}/${messageId}`)
             
