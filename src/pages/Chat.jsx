@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import apiServices from '../api/api'
 import { getChatObjectMetadata } from '../utils'
-import { ArrowLeftStartOnRectangleIcon, FlagIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/20/solid'
 
 const CONNECTED_EVENT = "connected";
 const DISCONNECT_EVENT = "disconnect";
@@ -27,8 +27,6 @@ function Chat() {
     // To keep track of the setTimeout function
   const typingTimeoutRef = useRef(null)
 
-  const [isConnected, setIsConnected] = useState(false)
-
   const [openAddChat, setOpenAddChat] = useState(false)
   const [localSearchQuery, setLocalSearchQuery] = useState("")
   const [loadingChats, setLoadingChats] = useState(false)
@@ -39,8 +37,13 @@ function Chat() {
   const [message, setMessage] = useState("") // to store currently typed message
   const [attachedFiles, setAttachedFiles] = useState([])
 
-  const [isTyping, setIsTyping] = useState(false)
   const [selfTyping, setSelfTyping] = useState(false)
+
+
+  const [isConnected, setIsConnected] = useState(false)
+
+  const [isTyping, setIsTyping] = useState(false)
+
 
   const updateChatLastMessage = (chatToUpdateId, message) => {
     const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)
@@ -150,6 +153,78 @@ function Chat() {
     }
   }
 
+  const onConnect = () => {
+    setIsConnected(true)
+  }
+
+  const onDisconnect = () => {
+    setIsConnected(false)
+  }
+
+  const handleOnSocketTyping = (chatId) => {
+    if(chatId !== currentChat.current?._id) return
+
+    setIsTyping(true)
+  }
+
+  const handleOnSocketStopTyping = (chatId) => {
+    if(chatId !== currentChat.current?._id) return
+
+    setIsTyping(false)
+  }
+
+  const onMessageRecieved = (message) => {
+    if(message?.chat !== currentChat.current?._id){
+      setUnreadMessages((prev) => [message, ...prev])
+    } else {
+      setMessages((prev) => [message, ...prev])
+    }
+
+    updateChatLastMessage(message.chat || "", message)
+  }
+
+  const onMessageDelete = (message) => {
+    if(message?.chat !== currentChat.current?._id){
+      setUnreadMessages((prev) => prev.filter((msg) => msg._id !== message._id))
+    } else {
+      setMessages((prev) => prev.filter((msg) => msg._id !== message._id))
+    }
+
+    updateChatLastMessageOnDeletion(message.chat, message)
+  }
+
+  const onNewChat = (chat) => {
+    setChats((prev) => [chat, ...prev])
+  }
+
+  const onChatLeave = (chat) => {
+    if(chat._id === currentChat.current?._id){
+      currentChat.current = null
+
+      localStorage.removeItem("currentChat")
+    }
+
+    setChats((prev) => prev.filter((c) => c._id !== chat._id))
+  }
+
+  const onGroupNameChange = (chat) => {
+    if(Chat._id === currentChat.current?._id){
+      currentChat.current = chat
+
+      localStorage.setItem("currentChat", JSON.stringify(chat))
+    }
+
+    setChats((prev) => [
+      ...prev.map((c) => {
+        if(c._id === chat._id){
+          return chat;
+        }
+
+        return c;
+      })
+    ])
+  }
+
   useEffect(() => {
     getChats()
 
@@ -163,6 +238,40 @@ function Chat() {
       getMessages()
     }
   },[])
+
+  useEffect(() => {
+    if(!socket) return
+
+    socket.on(CONNECTED_EVENT, onConnect)
+
+    socket.on(DISCONNECT_EVENT, onDisconnect)
+
+    socket.on(TYPING_EVENT, handleOnSocketTyping)
+
+    socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping)
+
+    socket.on(MESSAGE_RECEIVED_EVENT, onMessageRecieved)
+
+    socket.on(MESSAGE_DELETE_EVENT, onMessageDelete)
+
+    socket.on(NEW_CHAT_EVENT, onNewChat)
+
+    socket.on(LEAVE_CHAT_EVENT, onChatLeave)
+
+    socket.on(UPDATE_GROUP_NAME_EVENT, onGroupNameChange)
+
+    return () => {
+      socket.off(CONNECTED_EVENT, onConnect)
+      socket.off(DISCONNECT_EVENT, onDisconnect)
+      socket.off(TYPING_EVENT, handleOnSocketTyping)
+      socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping)
+      socket.off(MESSAGE_RECEIVED_EVENT, onMessageRecieved)
+      socket.off(MESSAGE_DELETE_EVENT, onMessageDelete)
+      socket.off(NEW_CHAT_EVENT, onNewChat)
+      socket.off(LEAVE_CHAT_EVENT, onChatLeave)
+      socket.off(UPDATE_GROUP_NAME_EVENT, onGroupNameChange)
+    }
+  },[socket, chats])
 
   return (
     <>
@@ -340,7 +449,7 @@ function Chat() {
                         </div>
                         <img 
                           className='h-full rounded-xl w-full object-cover'
-                          src={URL.createObjectURL(File)} 
+                          src={URL.createObjectURL(file)} 
                           alt="attachment" 
                         />
                       </div>
@@ -355,7 +464,9 @@ function Chat() {
                   type="file" 
                   value=""
                   onChange={(e) => {
-                    if(e.target.files) setAttachedFiles([...e.target.files])
+                    if(e.target.files){
+                      setAttachedFiles([...e.target.files])
+                    } 
                   }}
                   multiple
                   max={5}

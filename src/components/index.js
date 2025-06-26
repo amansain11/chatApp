@@ -8,6 +8,7 @@ import Typing from './Typing'
 import ChatItem from './ChatItem'
 import GroupChatDetailsModal from './GroupChatDetailsModal'
 import MessageItem from './MessageItem'
+import Loader from './Loader'
 
 export {
     Input,
@@ -20,4 +21,5 @@ export {
     ChatItem,
     GroupChatDetailsModal,
     MessageItem,
+    Loader
 }

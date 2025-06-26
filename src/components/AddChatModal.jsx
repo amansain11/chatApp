@@ -79,7 +79,7 @@ function AddChatModal({open, onClose, onSuccess}) {
   },[open])
 
   return (
-    <div className='absolute z-15 bg-black/50 w-screen h-screen flex justify-center items-center'>
+    <div className='absolute z-50 bg-black/50 w-screen h-screen flex justify-center items-center'>
       <div className='relative transform rounded-lg bg-[rgb(33_35_36)] px-4 pb-4 pt-5 text-left shadow-xl  mb-5 m-2.5 transition-all sm:my-8 sm:w-full sm:max-w-3xl sm:p-6'>
         <div>
           <div className='flex justify-between items-center'>

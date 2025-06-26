@@ -109,7 +109,7 @@ function GroupChatDetailsModal({
   }, [open])
 
   return (
-    <div className='fixed top-0 right-0 z-15 bg-black/50 w-screen h-screen flex justify-end items-center'>
+    <div className='fixed top-0 right-0 z-50 bg-black/50 w-screen h-screen flex justify-end items-center'>
       <div className='bg-[#2e333d] h-full w-screen max-w-2xl flex flex-col overflow-y-scroll py-6 shadow-xl'>
         <div className='px-4 sm:px-6'>
           <div className='flex items-start justify-between'>

@@ -10,10 +10,14 @@ function Select({
 }) {
     const [localOptions, setLocalOptions] = useState([])
     const [showOptions, setShowOptions] = useState(false)
+
+    const [inputValue, setInputValue] = useState('')
     
     const selected = options.find((option) => option.value === value)
 
     const handleInputChange = (e) =>{
+        setInputValue(e.target.value)
+
         setLocalOptions(options.filter((option) => option.label.includes(e.target.value)))
         setShowOptions(true)
     }
@@ -26,7 +30,7 @@ function Select({
       <div className='relative w-full'>
         <Input
           placeholder={placeholder}
-          value={showOptions ? "" : selected?.label || ""}
+          value={selected ? selected?.label : inputValue ? inputValue : ""}
           onChange={handleInputChange}
           onFocus={() => setShowOptions(true)}
         />
@@ -37,7 +41,7 @@ function Select({
             <ChevronUpDownIcon className='h-5 w-5 text-zinc-400' aria-hidden="true"/>
         </div>
       </div>
-      {showOptions && localOptions.length > 0 && (
+      {showOptions && (localOptions.length > 0 ? (
         <ul className='outline outline-zinc-400 absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-2xl bg-[rgb(46_51_61)] text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm'>
             {localOptions.map((option) => (
                 <li
@@ -64,7 +68,11 @@ function Select({
                 </li>
             ))}
         </ul>
-      )}
+      ) : (
+        <div className='outline outline-zinc-400 absolute z-10 mt-2 p-5 max-h-60 w-full overflow-auto rounded-2xl bg-[rgb(46_51_61)] text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm'>
+          users not available!
+        </div>
+      ))}
     </div>
   )
 }

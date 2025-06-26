@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react'
 import apiServices from '../../api/api'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from './AuthContext'
+import { Loader } from '../../components'
 
 const AuthProvider = ({children}) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +40,7 @@ const AuthProvider = ({children}) => {
         if(response){
             setUser(null)
             setStatus(false)
+            localStorage.clear()
             navigate("/login")
         }
         setIsLoading(false)
@@ -58,7 +60,7 @@ const AuthProvider = ({children}) => {
 
     return (
         <AuthContext.Provider value={{user, status, register, login, logout}}>
-            {isLoading ? 'loading...' : children}
+            {isLoading ? <Loader /> : children}
         </AuthContext.Provider>
     )
 }
