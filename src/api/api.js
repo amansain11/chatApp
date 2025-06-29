@@ -59,6 +59,14 @@ class ApiServices{
         }
     }
 
+    async refreshAccessToken(){
+        try {
+            return await this.apiClient.post('/users/refresh-token')
+        } catch (error) {
+            throw error
+        }
+    }
+
     async getUserChats(){
         try {
             const {data} = await this.apiClient.get('/chat-app/chats')

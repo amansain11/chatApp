@@ -128,7 +128,7 @@ function Chat() {
     if(!currentChat.current?._id || !socket) return
 
     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id)
-    console.log('message from sendchatmessage: ', message)
+
     const {data} = await apiServices.sendMessage(
       currentChat.current?._id || "",
       message,

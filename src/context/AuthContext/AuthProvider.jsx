@@ -36,26 +36,71 @@ const AuthProvider = ({children}) => {
 
     const logout = async () => {
         setIsLoading(true)
-        const response = await apiServices.logout()
-        if(response){
-            setUser(null)
-            setStatus(false)
-            localStorage.clear()
-            navigate("/login")
+        try {
+            const response = await apiServices.logout()
+            if(response){
+                setUser(null)
+                setStatus(false)
+                localStorage.clear()
+                navigate("/login")
+            }
+        } catch (error) {
+            throw error
+        } finally{
+            setIsLoading(false)
         }
-        setIsLoading(false)
     }
 
     useEffect(() => {
-        setIsLoading(true)
-        ;(async ()=>{
-            const {data} = await apiServices.getCurrentUser()
-            if(data?._id){
-                setUser(data)
-                setStatus(true)
+        const interceptor = apiServices.apiClient.interceptors.response.use(
+            res => res,
+            async err => {
+                const originalRequest = err.config;
+
+                 if (
+                    err.response?.status === 401 &&
+                    !originalRequest._retry &&
+                    !originalRequest.url.includes('/users/refresh-token') &&
+                    !originalRequest.url.includes('/users/login')
+                ){
+                    originalRequest._retry = true;
+
+                    try {
+                        const res = await apiServices.refreshAccessToken()
+                        const newToken = res.data?.data?.accessToken
+                        localStorage.setItem("token", JSON.stringify(newToken))
+                        return apiServices.apiClient(originalRequest)
+                    } catch (error) {
+                        setUser(null)
+                        setStatus(false)
+                        localStorage.clear()
+                        navigate('/login')
+                        return Promise.reject(error)
+                    }
+                }
+
+                return Promise.reject(err)
             }
-        })()
-        setIsLoading(false)
+        )
+
+        return () => apiServices.apiClient.interceptors.response.eject(interceptor)
+    },[]) 
+
+    useEffect(() => {
+        setIsLoading(true)
+        try {
+            ;(async ()=>{
+                const {data} = await apiServices.getCurrentUser()
+                if(data?._id){
+                    setUser(data)
+                    setStatus(true)
+                }
+            })()
+        } catch (error) {
+            throw error
+        } finally{
+            setIsLoading(false)
+        }
     },[])
 
     return (
